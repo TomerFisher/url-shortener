@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Redirect } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  NotFoundException,
+  Param,
+  Post,
+  Redirect,
+} from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { Url } from './url.entity';
@@ -10,13 +19,23 @@ export class UrlsController {
   @Get(':shortUrl')
   @Redirect()
   async redirectToOriginalUrl(@Param('shortUrl') shortUrl: string) {
-    const url = await this.urlsService.getOriginalUrl(shortUrl);
-    return { url };
+    try {
+      const url = await this.urlsService.getOriginalUrl(shortUrl);
+      return { url };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
   @Post('/urls')
   createShortUrl(@Body() createShortUrlDto: CreateShortUrlDto): Promise<Url> {
-    console.log(createShortUrlDto);
-    return this.urlsService.createShortUrl(createShortUrlDto);
+    try {
+      return this.urlsService.createShortUrl(createShortUrlDto);
+    } catch (error) {
+      throw new InternalServerErrorException(error);
+    }
   }
 }
