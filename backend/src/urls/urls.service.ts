@@ -26,7 +26,7 @@ export class UrlsService implements OnModuleInit {
     private readonly urlsRepository: Repository<Url>,
     @Inject(REDIS_INSTANCE) private readonly redis: Redis,
   ) {
-    this.sqids = new Sqids();
+    this.sqids = new Sqids({ minLength: 7 });
   }
 
   async onModuleInit() {
