@@ -7,7 +7,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import Sqids from 'sqids';
 import Redis from 'ioredis';
 import { Url } from './url.entity';
@@ -46,10 +46,7 @@ export class UrlsService implements OnModuleInit {
       await this.redis.set(url.shortUrl, url.originalUrl);
       return url;
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        error.driverError.code === '23505'
-      ) {
+      if (error.code === '23505') {
         throw new ForbiddenException('alias already exists');
       }
       throw new InternalServerErrorException();
