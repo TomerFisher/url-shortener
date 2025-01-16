@@ -1,11 +1,13 @@
 import {
+  ForbiddenException,
   Inject,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import Sqids from 'sqids';
 import Redis from 'ioredis';
 import { Url } from './url.entity';
@@ -28,16 +30,30 @@ export class UrlsService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.counter = await this.redis.incrby(counter_key, 0);
+    try {
+      this.counter = await this.redis.incrby(counter_key, 0);
+    } catch {
+      throw new InternalServerErrorException();
+    }
   }
 
   async createShortUrl(createShortUrlDto: CreateShortUrlDto): Promise<Url> {
-    const url = new Url();
-    url.originalUrl = createShortUrlDto.originalUrl;
-    url.shortUrl = createShortUrlDto.alias || (await this.generateShortUrl());
-    const savedUrl = await this.urlsRepository.save(url);
-    await this.redis.set(url.shortUrl, url.originalUrl);
-    return savedUrl;
+    try {
+      const url = new Url();
+      url.originalUrl = createShortUrlDto.originalUrl;
+      url.shortUrl = createShortUrlDto.alias || (await this.generateShortUrl());
+      await this.urlsRepository.insert(url);
+      await this.redis.set(url.shortUrl, url.originalUrl);
+      return url;
+    } catch (error) {
+      if (
+        error instanceof QueryFailedError &&
+        error.driverError.code === '23505'
+      ) {
+        throw new ForbiddenException('alias already exists');
+      }
+      throw new InternalServerErrorException();
+    }
   }
 
   async getOriginalUrl(shortUrl: string): Promise<string> {
