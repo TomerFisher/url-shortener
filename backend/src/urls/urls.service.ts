@@ -4,7 +4,6 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,8 +17,7 @@ import { ALIAS_MIN_LENGTH } from './constants';
 const counter_key = 'counter';
 
 @Injectable()
-export class UrlsService implements OnModuleInit {
-  counter: number;
+export class UrlsService {
   sqids: Sqids;
 
   constructor(
@@ -28,14 +26,6 @@ export class UrlsService implements OnModuleInit {
     @Inject(REDIS_INSTANCE) private readonly redis: Redis,
   ) {
     this.sqids = new Sqids({ minLength: ALIAS_MIN_LENGTH });
-  }
-
-  async onModuleInit() {
-    try {
-      this.counter = await this.redis.incrby(counter_key, 0);
-    } catch {
-      throw new InternalServerErrorException();
-    }
   }
 
   async createShortUrl(createShortUrlDto: CreateShortUrlDto): Promise<Url> {
