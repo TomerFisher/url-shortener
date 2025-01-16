@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as base62 from 'base62';
+import Sqids from 'sqids';
 import Redis from 'ioredis';
 import { Url } from './url.entity';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
@@ -17,12 +17,15 @@ const counter_key = 'counter';
 @Injectable()
 export class UrlsService implements OnModuleInit {
   counter: number;
+  sqids: Sqids;
 
   constructor(
     @InjectRepository(Url)
     private readonly urlsRepository: Repository<Url>,
     @Inject(REDIS_INSTANCE) private readonly redis: Redis,
-  ) {}
+  ) {
+    this.sqids = new Sqids();
+  }
 
   async onModuleInit() {
     this.counter = await this.redis.incrby(counter_key, 0);
@@ -51,6 +54,6 @@ export class UrlsService implements OnModuleInit {
 
   private async generateShortUrl(): Promise<string> {
     const conter = await this.redis.incr(counter_key);
-    return base62.encode(conter);
+    return this.sqids.encode([conter]);
   }
 }
