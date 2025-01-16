@@ -13,6 +13,7 @@ import Redis from 'ioredis';
 import { Url } from './url.entity';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { REDIS_INSTANCE } from '../redis/redis.module';
+import { ALIAS_MIN_LENGTH } from './constants';
 
 const counter_key = 'counter';
 
@@ -26,7 +27,7 @@ export class UrlsService implements OnModuleInit {
     private readonly urlsRepository: Repository<Url>,
     @Inject(REDIS_INSTANCE) private readonly redis: Redis,
   ) {
-    this.sqids = new Sqids({ minLength: 7 });
+    this.sqids = new Sqids({ minLength: ALIAS_MIN_LENGTH });
   }
 
   async onModuleInit() {
@@ -41,9 +42,9 @@ export class UrlsService implements OnModuleInit {
     try {
       const url = new Url();
       url.originalUrl = createShortUrlDto.originalUrl;
-      url.shortUrl = createShortUrlDto.alias || (await this.generateShortUrl());
+      url.alias = createShortUrlDto.alias || (await this.generateAlias());
       await this.urlsRepository.insert(url);
-      await this.redis.set(url.shortUrl, url.originalUrl);
+      await this.redis.set(url.alias, url.originalUrl);
       return url;
     } catch (error) {
       if (error.code === '23505') {
@@ -53,19 +54,19 @@ export class UrlsService implements OnModuleInit {
     }
   }
 
-  async getOriginalUrl(shortUrl: string): Promise<string> {
-    const cachedOriginalUrl = await this.redis.get(shortUrl);
+  async getOriginalUrl(alias: string): Promise<string> {
+    const cachedOriginalUrl = await this.redis.get(alias);
     if (cachedOriginalUrl) {
       return cachedOriginalUrl;
     }
-    const url = await this.urlsRepository.findOneBy({ shortUrl });
+    const url = await this.urlsRepository.findOneBy({ alias });
     if (!url) {
-      throw new NotFoundException(`alias "${shortUrl}" not found`);
+      throw new NotFoundException(`alias "${alias}" not found`);
     }
     return url.originalUrl;
   }
 
-  private async generateShortUrl(): Promise<string> {
+  private async generateAlias(): Promise<string> {
     const conter = await this.redis.incr(counter_key);
     return this.sqids.encode([conter]);
   }

@@ -7,10 +7,10 @@ import { Url } from './url.entity';
 export class UrlsController {
   constructor(private readonly urlsService: UrlsService) {}
 
-  @Get(':shortUrl')
+  @Get(':alias')
   @Redirect()
-  async redirectToOriginalUrl(@Param('shortUrl') shortUrl: string) {
-    const url = await this.urlsService.getOriginalUrl(shortUrl);
+  async redirectToOriginalUrl(@Param('alias') alias: string) {
+    const url = await this.urlsService.getOriginalUrl(alias);
     return { url };
   }
 

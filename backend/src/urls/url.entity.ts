@@ -1,9 +1,10 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { ALIAS_MAX_LENGTH } from './constants';
 
-@Entity()
+@Entity('urls')
 export class Url {
-  @PrimaryColumn({ length: 16 })
-  shortUrl: string;
+  @PrimaryColumn({ length: ALIAS_MAX_LENGTH })
+  alias: string;
 
   @Column()
   originalUrl: string;
