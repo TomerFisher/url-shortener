@@ -9,7 +9,7 @@ export const REDIS_INSTANCE = 'REDIS_INSTANCE';
     {
       provide: REDIS_INSTANCE,
       useFactory: (configService: ConfigService) => {
-        return new Redis(configService.get('REDIS_URL'));
+        return new Redis(configService.get('REDIS_URI'));
       },
       inject: [ConfigService],
     },
