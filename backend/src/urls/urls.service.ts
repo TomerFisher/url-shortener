@@ -63,7 +63,7 @@ export class UrlsService implements OnModuleInit {
     }
     const url = await this.urlsRepository.findOneBy({ shortUrl });
     if (!url) {
-      throw new NotFoundException(`short url ${shortUrl} not found`);
+      throw new NotFoundException(`alias "${shortUrl}" not found`);
     }
     return url.originalUrl;
   }
