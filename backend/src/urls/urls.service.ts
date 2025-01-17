@@ -21,8 +21,7 @@ export class UrlsService {
   sqids: Sqids;
 
   constructor(
-    @InjectRepository(Url)
-    private readonly urlsRepository: Repository<Url>,
+    @InjectRepository(Url) private readonly urlsRepository: Repository<Url>,
     @Inject(REDIS_INSTANCE) private readonly redis: Redis,
   ) {
     this.sqids = new Sqids({ minLength: ALIAS_MIN_LENGTH });
