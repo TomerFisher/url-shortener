@@ -49,6 +49,7 @@ describe('UrlsController', () => {
         originalUrl: 'http://example.com',
       };
       const createdUrl: Url = {
+        id: 1,
         alias: '2h5OqqO',
         originalUrl: 'http://example.com',
         createdAt: new Date(),

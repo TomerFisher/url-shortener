@@ -32,7 +32,7 @@ export class UrlsService {
       const url = new Url();
       url.originalUrl = createShortUrlDto.originalUrl;
       url.alias = createShortUrlDto.alias || (await this.generateAlias());
-      await this.urlsRepository.insert(url);
+      await this.urlsRepository.save(url);
       await this.redis.set(url.alias, url.originalUrl);
       return url;
     } catch (error) {
