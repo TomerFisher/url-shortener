@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { Url } from './url.entity';
-import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { REDIS_INSTANCE } from '../redis/redis.module';
 import Redis from 'ioredis';
 import { Repository } from 'typeorm';
@@ -16,6 +15,7 @@ describe('UrlsService', () => {
   let service: UrlsService;
   let repository: Repository<Url>;
   let redis: Redis;
+  let url: Url;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,6 +35,11 @@ describe('UrlsService', () => {
     service = module.get<UrlsService>(UrlsService);
     repository = module.get<Repository<Url>>(getRepositoryToken(Url));
     redis = module.get<Redis>(REDIS_INSTANCE);
+
+    url = new Url();
+    url.originalUrl = 'http://example.com';
+    url.alias = '2h5OqqO';
+    jest.spyOn(repository, 'create').mockReturnValue(url);
   });
 
   it('should be defined', () => {
@@ -43,72 +48,50 @@ describe('UrlsService', () => {
 
   describe('createShortUrl', () => {
     it('should create a short URL', async () => {
-      const createShortUrlDto: CreateShortUrlDto = {
-        originalUrl: 'http://example.com',
-      };
-      const url = new Url();
-      url.originalUrl = createShortUrlDto.originalUrl;
-      url.alias = '2h5OqqO';
-
       jest.spyOn(service.sqids, 'encode').mockReturnValue(url.alias);
-      jest.spyOn(repository, 'insert').mockResolvedValue(undefined);
+      jest.spyOn(repository, 'save').mockResolvedValue(url);
       jest.spyOn(redis, 'incr').mockResolvedValue(1);
       jest.spyOn(redis, 'set').mockResolvedValue('OK');
 
-      const result = await service.createShortUrl(createShortUrlDto);
+      const result = await service.createShortUrl({
+        originalUrl: url.originalUrl,
+      });
       expect(result).toEqual(url);
     });
 
     it('should throw ForbiddenException if alias already exists', async () => {
-      const createShortUrlDto: CreateShortUrlDto = {
-        originalUrl: 'http://example.com',
-        alias: '2h5OqqO',
-      };
+      jest.spyOn(repository, 'save').mockRejectedValue({ code: '23505' });
 
-      jest.spyOn(repository, 'insert').mockRejectedValue({ code: '23505' });
-
-      await expect(service.createShortUrl(createShortUrlDto)).rejects.toThrow(
+      await expect(service.createShortUrl(url)).rejects.toThrow(
         ForbiddenException,
       );
     });
 
     it('should throw InternalServerErrorException on other errors', async () => {
-      const createShortUrlDto: CreateShortUrlDto = {
-        originalUrl: 'http://example.com',
-      };
-
-      jest.spyOn(repository, 'insert').mockRejectedValue(new Error());
+      jest.spyOn(repository, 'save').mockRejectedValue(new Error());
       jest.spyOn(redis, 'incr').mockResolvedValue(1);
 
-      await expect(service.createShortUrl(createShortUrlDto)).rejects.toThrow(
-        InternalServerErrorException,
-      );
+      await expect(
+        service.createShortUrl({ originalUrl: url.originalUrl }),
+      ).rejects.toThrow(InternalServerErrorException);
     });
   });
 
   describe('getOriginalUrl', () => {
     it('should return the original URL from cache', async () => {
-      const alias = '2h5OqqO';
-      const originalUrl = 'http://example.com';
+      jest.spyOn(redis, 'get').mockResolvedValue(url.originalUrl);
 
-      jest.spyOn(redis, 'get').mockResolvedValue(originalUrl);
-
-      const result = await service.getOriginalUrl(alias);
-      expect(result).toBe(originalUrl);
+      const result = await service.getOriginalUrl(url.alias);
+      expect(result).toBe(url.originalUrl);
     });
 
     it('should return the original URL from database if not in cache', async () => {
-      const alias = '2h5OqqO';
-      const originalUrl = 'http://example.com';
-      const url = new Url();
-      url.alias = alias;
-      url.originalUrl = originalUrl;
-
       jest.spyOn(redis, 'get').mockResolvedValue(null);
       jest.spyOn(repository, 'findOneBy').mockResolvedValue(url);
+      jest.spyOn(redis, 'set').mockResolvedValue('OK');
 
-      const result = await service.getOriginalUrl(alias);
-      expect(result).toBe(originalUrl);
+      const result = await service.getOriginalUrl(url.alias);
+      expect(result).toBe(url.originalUrl);
     });
 
     it('should throw NotFoundException if alias not found', async () => {

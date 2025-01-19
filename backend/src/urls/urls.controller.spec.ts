@@ -3,6 +3,7 @@ import { UrlsController } from './urls.controller';
 import { UrlsService } from './urls.service';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { Url } from './url.entity';
+import { AuthGuard } from '../auth/auth.guard';
 
 describe('UrlsController', () => {
   let controller: UrlsController;
@@ -20,7 +21,10 @@ describe('UrlsController', () => {
           },
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<UrlsController>(UrlsController);
     service = module.get<UrlsService>(UrlsService);
