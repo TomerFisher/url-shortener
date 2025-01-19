@@ -18,14 +18,16 @@ export class UsersService {
   }
 
   async createUser(email: string, name: string, hash: string) {
+    const user = this.usersRepository.create({ email, name, hash });
     try {
-      const user = this.usersRepository.create({ email, name, hash });
       return await this.usersRepository.save(user);
     } catch (error) {
       if (error.code === '23505') {
         throw new ForbiddenException('Email already exists.');
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while creating the user.',
+      );
     }
   }
 }

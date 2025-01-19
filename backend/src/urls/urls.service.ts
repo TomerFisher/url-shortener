@@ -28,18 +28,22 @@ export class UrlsService {
   }
 
   async createShortUrl(createShortUrlDto: CreateShortUrlDto): Promise<Url> {
+    const alias = createShortUrlDto.alias || (await this.generateAlias());
+    const url = this.urlsRepository.create({
+      originalUrl: createShortUrlDto.originalUrl,
+      alias,
+    });
     try {
-      const url = new Url();
-      url.originalUrl = createShortUrlDto.originalUrl;
-      url.alias = createShortUrlDto.alias || (await this.generateAlias());
       await this.urlsRepository.save(url);
       await this.redis.set(url.alias, url.originalUrl);
       return url;
     } catch (error) {
       if (error.code === '23505') {
-        throw new ForbiddenException('alias already exists');
+        throw new ForbiddenException('Alias already exists');
       }
-      throw new InternalServerErrorException();
+      throw new InternalServerErrorException(
+        'An unexpected error occurred while creating short url.',
+      );
     }
   }
 
@@ -50,8 +54,9 @@ export class UrlsService {
     }
     const url = await this.urlsRepository.findOneBy({ alias });
     if (!url) {
-      throw new NotFoundException(`alias "${alias}" not found`);
+      throw new NotFoundException(`Alias ${alias} not found`);
     }
+    await this.redis.set(url.alias, url.originalUrl);
     return url.originalUrl;
   }
 
