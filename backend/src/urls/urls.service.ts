@@ -35,7 +35,7 @@ export class UrlsService {
     });
     try {
       await this.urlsRepository.save(url);
-      await this.redis.set(url.alias, url.originalUrl);
+      await this.cacheUrl(url);
       return url;
     } catch (error) {
       if (error.code === '23505') {
@@ -48,7 +48,7 @@ export class UrlsService {
   }
 
   async getOriginalUrl(alias: string): Promise<string> {
-    const cachedOriginalUrl = await this.redis.get(alias);
+    const cachedOriginalUrl = await this.getCachedUrl(alias);
     if (cachedOriginalUrl) {
       return cachedOriginalUrl;
     }
@@ -56,12 +56,33 @@ export class UrlsService {
     if (!url) {
       throw new NotFoundException(`Alias ${alias} not found`);
     }
-    await this.redis.set(url.alias, url.originalUrl);
+    await this.cacheUrl(url);
     return url.originalUrl;
   }
 
   private async generateAlias(): Promise<string> {
     const conter = await this.redis.incr(counter_key);
     return this.sqids.encode([conter]);
+  }
+
+  private async cacheUrl(url: Url) {
+    try {
+      await this.redis.set(url.alias, url.originalUrl);
+    } catch (error) {
+      console.error(
+        `Failed to cache URL for alias "${url.alias}": ${error.message}`,
+      );
+    }
+  }
+
+  private async getCachedUrl(alias: string) {
+    try {
+      return await this.redis.get(alias);
+    } catch (error) {
+      console.error(
+        `Failed to retrieve value from Redis for alias "${alias}": ${error.message}`,
+      );
+      return null;
+    }
   }
 }
