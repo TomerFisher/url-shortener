@@ -10,8 +10,8 @@ import {
 import { UrlsService } from './urls.service';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { Url } from './url.entity';
-import { AuthGuard } from 'src/auth/auth.guard';
-import { Public } from 'src/auth/decorators/public.decorator';
+import { AuthGuard } from '../auth/auth.guard';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller()
 export class UrlsController {
