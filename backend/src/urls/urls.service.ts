@@ -28,10 +28,9 @@ export class UrlsService {
   }
 
   async createShortUrl(createShortUrlDto: CreateShortUrlDto): Promise<Url> {
-    const alias = createShortUrlDto.alias || (await this.generateAlias());
     const url = this.urlsRepository.create({
       originalUrl: createShortUrlDto.originalUrl,
-      alias,
+      alias: createShortUrlDto.alias || (await this.generateAlias()),
     });
     try {
       await this.urlsRepository.save(url);
