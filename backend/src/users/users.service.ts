@@ -17,6 +17,10 @@ export class UsersService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  findOneById(id: number) {
+    return this.usersRepository.findOneBy({ id });
+  }
+
   async createUser(email: string, name: string, hash: string) {
     const user = this.usersRepository.create({ email, name, hash });
     try {

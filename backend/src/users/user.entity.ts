@@ -1,7 +1,9 @@
+import { Url } from '../urls/url.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -21,4 +23,7 @@ export class User {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  @OneToMany(() => Url, (url) => url.user)
+  urls: Url[];
 }

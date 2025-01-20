@@ -1,17 +1,10 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Redirect,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Redirect } from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { Url } from './url.entity';
-import { AuthGuard } from '../auth/auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
+import { GetUser } from '../auth/decorators/get-user.decorator';
+import { User } from '../users/user.entity';
 
 @Controller()
 export class UrlsController {
@@ -25,9 +18,11 @@ export class UrlsController {
     return { url };
   }
 
-  @UseGuards(AuthGuard)
   @Post('/urls')
-  createShortUrl(@Body() createShortUrlDto: CreateShortUrlDto): Promise<Url> {
-    return this.urlsService.createShortUrl(createShortUrlDto);
+  createShortUrl(
+    @Body() createShortUrlDto: CreateShortUrlDto,
+    @GetUser() user: User,
+  ): Promise<Url> {
+    return this.urlsService.createShortUrl(user, createShortUrlDto);
   }
 }

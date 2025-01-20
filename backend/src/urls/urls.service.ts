@@ -13,6 +13,7 @@ import { Url } from './url.entity';
 import { CreateShortUrlDto } from './dto/create-short-url.dto';
 import { REDIS_INSTANCE } from '../redis/redis.module';
 import { ALIAS_MIN_LENGTH } from './constants';
+import { User } from '../users/user.entity';
 
 const counter_key = 'counter';
 
@@ -27,10 +28,14 @@ export class UrlsService {
     this.sqids = new Sqids({ minLength: ALIAS_MIN_LENGTH });
   }
 
-  async createShortUrl(createShortUrlDto: CreateShortUrlDto): Promise<Url> {
+  async createShortUrl(
+    user: User,
+    createShortUrlDto: CreateShortUrlDto,
+  ): Promise<Url> {
     const url = this.urlsRepository.create({
       originalUrl: createShortUrlDto.originalUrl,
       alias: createShortUrlDto.alias || (await this.generateAlias()),
+      user,
     });
     try {
       await this.urlsRepository.save(url);
